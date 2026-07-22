@@ -15,5 +15,10 @@ public sealed class Error
         StatusCode = statusCode;
     }
 
+    // For dynamic/unpredictable errors (e.g. raw Identity errors) with no pre-translated Arabic string.
+    // Falls back to the English text for both — better than crashing on a missing translation.
+    public Error(string code, string errorDescription, int statusCode)
+        : this(code, errorDescription, errorDescription, statusCode) { }
+
     public static readonly Error None = new(string.Empty, string.Empty, string.Empty, StatusCodes.Status200OK);
 }

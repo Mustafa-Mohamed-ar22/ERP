@@ -10,7 +10,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     {
         _tenantProvider = tenantProvider;
     }
-
+    public Guid CurrentCompanyId => _tenantProvider.CompanyId;
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<Branch> Branches => Set<Branch>();
     public DbSet<Department> Departments => Set<Department>();
@@ -21,7 +21,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<FileAttachment> FileAttachments => Set<FileAttachment>();
-    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -44,8 +43,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
         if (typeof(ITenantEntity).IsAssignableFrom(clrType))
         {
             var companyIdProperty = Expression.Property(parameter, nameof(ITenantEntity.CompanyId));
-            var currentCompanyId = Expression.Property(
-                Expression.Constant(_tenantProvider), nameof(ITenantProvider.CompanyId));
+
+            // Constant(this) is specially re-bound by EF Core to the *actual executing* context instance —
+            // this is what makes the filter correct per-request despite the model being cached once.
+            var contextInstance = Expression.Constant(this);
+            var currentCompanyId = Expression.Property(contextInstance, nameof(CurrentCompanyId));
+
             filter = Expression.Equal(companyIdProperty, currentCompanyId);
         }
 

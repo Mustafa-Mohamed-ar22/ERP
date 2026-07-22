@@ -1,8 +1,7 @@
 public record AuthResponse(
-    string AccessToken,
-    string RefreshToken,
-    DateTime ExpiresAt,
     Guid UserId,
+    string Email,
     string FullName,
-    Guid CompanyId,
-    List<string> Roles);
+    string Role,
+    string AccessToken,
+    string RefreshToken);

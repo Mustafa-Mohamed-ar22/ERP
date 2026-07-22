@@ -1,4 +1,3 @@
-// Entities/System/Setting.cs
 public class Setting : AuditableEntity, ITenantEntity
 {
     public Guid CompanyId { get; set; }

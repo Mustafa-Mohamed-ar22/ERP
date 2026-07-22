@@ -14,6 +14,7 @@ public static class PermissionsCatalog{
         ("inventory.stock.view", "Inventory", "View stock levels"),
         ("inventory.stock.adjust", "Inventory", "Adjust stock"),
         ("accounting.journal.post", "Accounting", "Post journal entries"),
+        ("core.departments.manage", "Core", "Manage departments"),
         // add more as each module comes online
     };
 }

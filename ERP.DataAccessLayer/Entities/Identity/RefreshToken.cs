@@ -1,8 +1,10 @@
-public class RefreshToken : BaseEntity
+public class RefreshToken
 {
-    public Guid UserId { get; set; }
     public string Token { get; set; } = default!;
-    public DateTime ExpiresAt { get; set; }
-    public bool IsRevoked { get; set; } = false;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
+    public DateTime ExpiresOn { get; set; }
+    public DateTime? RevokedIn { get; set; }
+
+    public bool IsExpired => DateTime.UtcNow >= ExpiresOn;
+    public bool IsActive => RevokedIn is null && !IsExpired;
 }

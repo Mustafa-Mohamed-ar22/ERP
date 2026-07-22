@@ -1,0 +1,1 @@
+public record UpdateDepartmentRequest(string Name, Guid? BranchId, Guid? ParentDepartmentId, bool IsActive);

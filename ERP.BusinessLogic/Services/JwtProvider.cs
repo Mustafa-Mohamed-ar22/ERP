@@ -8,22 +8,15 @@ using System.Text;
 public class JwtProvider
 {
     private readonly JwtOptions _options;
-
-    public JwtProvider(IOptions<JwtOptions> options)
+    public JwtProvider(IOptions<JwtOptions> options) => _options = options.Value;
+    public string GenerateAccessTaoken(ApplicationUser user, IList<string> roles)
     {
-        _options = options.Value;
-    }
-
-    public (string token, DateTime expiresAt) GenerateAccessToken(ApplicationUser user, Guid companyId, IList<string> roles)
-    {
-        var expiresAt = DateTime.UtcNow.AddMinutes(_options.AccessTokenExpirationMinutes);
-
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email ?? string.Empty),
             new("fullName", user.FullName),
-            new("companyId", companyId.ToString()),
+            new("companyId", user.CompanyId.ToString()),
         };
         claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
@@ -34,40 +27,16 @@ public class JwtProvider
             issuer: _options.Issuer,
             audience: _options.Audience,
             claims: claims,
-            expires: expiresAt,
+            expires: DateTime.UtcNow.AddMinutes(_options.AccessTokenExpirationMinutes),
             signingCredentials: credentials);
 
-        return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt);
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public string GenerateRefreshToken()
+    public static RefreshToken GenerateRefreshToken() => new()
     {
-        var randomBytes = RandomNumberGenerator.GetBytes(64);
-        return Convert.ToBase64String(randomBytes);
-    }
-
-    public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
-    {
-        var validation = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = _options.Issuer,
-            ValidateAudience = true,
-            ValidAudience = _options.Audience,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Secret)),
-            ValidateLifetime = false // we WANT to read an expired token here
-        };
-
-        var handler = new JwtSecurityTokenHandler();
-        var principal = handler.ValidateToken(token, validation, out var securityToken);
-
-        if (securityToken is not JwtSecurityToken jwt ||
-            !jwt.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
-        {
-            return null;
-        }
-
-        return principal;
-    }
+        Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+        CreatedOn = DateTime.UtcNow,
+        ExpiresOn = DateTime.UtcNow.AddDays(14)
+    };
 }

@@ -3,20 +3,34 @@
 public static class AuthErrors
 {
     public static readonly Error InvalidCredentials = new(
-        code: "Auth.InvalidCredentials",
-        errorDescription: "Email or password is incorrect",
-        errorDescriptionAr: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
-        statusCode: StatusCodes.Status400BadRequest);
+        "Auth.InvalidCredentials", "Email or password is incorrect",
+        "البريد الإلكتروني أو كلمة المرور غير صحيحة", StatusCodes.Status400BadRequest);
+
+    public static readonly Error InactiveUser = new(
+        "Auth.InactiveUser", "This user account is disabled",
+        "هذا الحساب غير مفعل", StatusCodes.Status403Forbidden);
+
+    public static readonly Error EmailNotConfirmed = new(
+        "Auth.EmailNotConfirmed", "Please confirm your email before logging in",
+        "يرجى تأكيد البريد الإلكتروني أولاً قبل تسجيل الدخول", StatusCodes.Status403Forbidden);
+
+    public static readonly Error EmailAlreadyExists = new(
+        "Auth.EmailAlreadyExists", "An account with this email already exists",
+        "يوجد حساب مسجل بهذا البريد الإلكتروني بالفعل", StatusCodes.Status409Conflict);
+
+    public static readonly Error FaliedToSendEmail = new(
+        "Auth.FailedToSendEmail", "Failed to send the confirmation email",
+        "فشل إرسال البريد الإلكتروني", StatusCodes.Status500InternalServerError);
+
+    public static readonly Error InvalideCode = new(
+        "Auth.InvalidCode", "The verification code is invalid or expired",
+        "رمز التحقق غير صالح أو منتهي الصلاحية", StatusCodes.Status400BadRequest);
+
+    public static readonly Error AlreadyConfirmed = new(
+        "Auth.AlreadyConfirmed", "This email is already confirmed",
+        "تم تأكيد هذا البريد الإلكتروني بالفعل", StatusCodes.Status400BadRequest);
 
     public static readonly Error InvalidToken = new(
-        code: "Auth.InvalidToken",
-        errorDescription: "Refresh token is invalid or expired",
-        errorDescriptionAr: "رمز التحديث غير صالح أو منتهي الصلاحية",
-        statusCode: StatusCodes.Status401Unauthorized);
-
-    public static readonly Error UserInactive = new(
-        code: "Auth.UserInactive",
-        errorDescription: "This user account is disabled",
-        errorDescriptionAr: "هذا الحساب غير مفعل",
-        statusCode: StatusCodes.Status403Forbidden);
+        "Auth.InvalidToken", "Refresh token is invalid or expired",
+        "رمز التحديث غير صالح أو منتهي الصلاحية", StatusCodes.Status401Unauthorized);
 }

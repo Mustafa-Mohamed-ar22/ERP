@@ -79,7 +79,7 @@ namespace ERP.API
 
             var app = builder.Build();
 
-            if (app.Environment.IsDevelopment())
+            if (app.Environment.IsDevelopment()||app.Environment.IsProduction())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
@@ -91,6 +91,7 @@ namespace ERP.API
                 await DbSeeder.SeedAsync(context, userManager, roleManager);
             }
             app.UseRequestLocalization(localizationOptions);
+            app.UseCors("AllowAll");
             app.UseExceptionHandler();
             app.UseHttpsRedirection();
             app.UseAuthentication();

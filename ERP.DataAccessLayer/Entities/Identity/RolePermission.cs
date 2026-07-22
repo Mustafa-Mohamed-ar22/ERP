@@ -1,4 +1,3 @@
-// Entities/Identity/RolePermission.cs
 public class RolePermission
 {
     public Guid RoleId { get; set; }

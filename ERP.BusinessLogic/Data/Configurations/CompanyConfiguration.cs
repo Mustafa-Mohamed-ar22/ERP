@@ -1,4 +1,3 @@
-// Data/Configurations/CompanyConfiguration.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,7 +11,7 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
         builder.Property(c => c.LegalName).HasMaxLength(200);
         builder.Property(c => c.TaxNumber).HasMaxLength(50);
         builder.Property(c => c.Currency).IsRequired().HasMaxLength(10);
-        builder.Property(c => c.Country).HasMaxLength(100);
+        builder.Property(c => c.Country).HasMaxLength(120);
 
         builder.HasMany(c => c.Branches)
             .WithOne(b => b.Company)

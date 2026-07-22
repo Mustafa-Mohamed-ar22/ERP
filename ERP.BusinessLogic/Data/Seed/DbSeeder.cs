@@ -1,4 +1,3 @@
-// Data/Seed/DbSeeder.cs
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -53,8 +52,8 @@ public static class DbSeeder
 
         // 3. Seed system role: SuperAdmin (CompanyId = null => global)
         var superAdminExists = await context.Roles
-    .IgnoreQueryFilters()
-    .AnyAsync(r => r.Name == "SuperAdmin");
+                                    .IgnoreQueryFilters()
+                                    .AnyAsync(r => r.Name == "SuperAdmin");
         if (!superAdminExists)
         {
             var superAdminRole = new ApplicationRole
