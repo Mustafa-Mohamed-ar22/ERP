@@ -6,11 +6,39 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ERP.BusinessLogic.Migrations
 {
     /// <inheritdoc />
-    public partial class first_intial_refresh_token : Migration
+    public partial class AccountModuele_FixWarnings : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "Accounts",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CompanyId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    AccountType = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    ParentAccountId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Accounts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Accounts_Accounts_ParentAccountId",
+                        column: x => x.ParentAccountId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
             migrationBuilder.CreateTable(
                 name: "ActivityLogs",
                 columns: table => new
@@ -108,6 +136,36 @@ namespace ERP.BusinessLogic.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_FileAttachments", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "JournalEntries",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CompanyId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    EntryNumber = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    EntryDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    PostedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PostedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ReversalOfEntryId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_JournalEntries", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_JournalEntries_JournalEntries_ReversalOfEntryId",
+                        column: x => x.ReversalOfEntryId,
+                        principalTable: "JournalEntries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -249,6 +307,34 @@ namespace ERP.BusinessLogic.Migrations
                         principalTable: "Companies",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "JournalEntryLines",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    JournalEntryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AccountId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Debit = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Credit = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_JournalEntryLines", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_JournalEntryLines_Accounts_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_JournalEntryLines_JournalEntries_JournalEntryId",
+                        column: x => x.JournalEntryId,
+                        principalTable: "JournalEntries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -417,6 +503,17 @@ namespace ERP.BusinessLogic.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Accounts_CompanyId_Code",
+                table: "Accounts",
+                columns: new[] { "CompanyId", "Code" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Accounts_ParentAccountId",
+                table: "Accounts",
+                column: "ParentAccountId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
                 column: "RoleId");
@@ -492,6 +589,27 @@ namespace ERP.BusinessLogic.Migrations
                 columns: new[] { "EntityName", "EntityId" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_JournalEntries_CompanyId_EntryNumber",
+                table: "JournalEntries",
+                columns: new[] { "CompanyId", "EntryNumber" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_JournalEntries_ReversalOfEntryId",
+                table: "JournalEntries",
+                column: "ReversalOfEntryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_JournalEntryLines_AccountId",
+                table: "JournalEntryLines",
+                column: "AccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_JournalEntryLines_JournalEntryId",
+                table: "JournalEntryLines",
+                column: "JournalEntryId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Notifications_CompanyId_UserId_IsRead",
                 table: "Notifications",
                 columns: new[] { "CompanyId", "UserId", "IsRead" });
@@ -555,6 +673,9 @@ namespace ERP.BusinessLogic.Migrations
                 name: "FileAttachments");
 
             migrationBuilder.DropTable(
+                name: "JournalEntryLines");
+
+            migrationBuilder.DropTable(
                 name: "Notifications");
 
             migrationBuilder.DropTable(
@@ -568,6 +689,12 @@ namespace ERP.BusinessLogic.Migrations
 
             migrationBuilder.DropTable(
                 name: "Branches");
+
+            migrationBuilder.DropTable(
+                name: "Accounts");
+
+            migrationBuilder.DropTable(
+                name: "JournalEntries");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

@@ -8,6 +8,7 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
         builder.Property(u => u.FullName).IsRequired().HasMaxLength(150);
         builder.HasIndex(u => new { u.CompanyId, u.Email });
 
+        builder.HasQueryFilter(u => !u.Company.IsDeleted);
 
 
         builder.OwnsMany(u => u.RefreshTokens, rt =>

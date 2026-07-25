@@ -29,7 +29,14 @@ public class BranchService : IBranchService
 
         return Result.Success(branch.Adapt<BranchResponse>());
     }
+    public async Task<Result<List<DepartmentResponse>>> GetDepartmentsByBranchIdAsync(Guid id, CancellationToken ct = default)
+    {
+        var departments = await _unitOfWork.Departments.Query().Where(x => x.BranchId == id).ToListAsync(ct);
+        if (departments is null)
+            return Result.Failure<List<DepartmentResponse>>(DepartmentErrors.NotFound);
 
+        return Result.Success(departments.Adapt<List<DepartmentResponse>>());
+    }
     public async Task<Result<BranchResponse>> CreateAsync(CreateBranchRequest request, CancellationToken ct = default)
     {
         var duplicateExists = await _unitOfWork.Branches.Query().AnyAsync(b => b.Code == request.Code, ct);

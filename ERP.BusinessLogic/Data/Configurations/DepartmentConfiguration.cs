@@ -1,7 +1,5 @@
-// Data/Configurations/DepartmentConfiguration.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-// Data/Configurations/DepartmentConfiguration.cs
 public class DepartmentConfiguration : IEntityTypeConfiguration<Department>
 {
     public void Configure(EntityTypeBuilder<Department> builder)

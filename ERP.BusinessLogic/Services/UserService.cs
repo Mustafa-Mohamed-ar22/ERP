@@ -65,14 +65,41 @@ public class UserService : IUserService
             .Where(u => u.CompanyId == _currentUser.CompanyId)
             .ToListAsync(ct);
 
+        var branchIds = users.Where(u => u.BranchId.HasValue).Select(u => u.BranchId!.Value).Distinct().ToList();
+        var departmentIds = users.Where(u => u.DepartmentId.HasValue).Select(u => u.DepartmentId!.Value).Distinct().ToList();
+
+        var branchNames = await _unitOfWork.Branches.Query()
+            .Where(b => branchIds.Contains(b.Id))
+            .ToDictionaryAsync(b => b.Id, b => b.Name, ct);
+
+        var departmentNames = await _unitOfWork.Departments.Query()
+            .Where(d => departmentIds.Contains(d.Id))
+            .ToDictionaryAsync(d => d.Id, d => d.Name, ct);
+
         var responses = new List<UserResponse>();
         foreach (var user in users)
         {
             var roles = await _userManager.GetRolesAsync(user);
-            responses.Add(ToResponse(user, roles));
+            var branchName = user.BranchId is { } bId && branchNames.TryGetValue(bId, out var bn) ? bn : null;
+            var departmentName = user.DepartmentId is { } dId && departmentNames.TryGetValue(dId, out var dn) ? dn : null;
+            responses.Add(ToResponse(user, roles, branchName, departmentName));
         }
 
         return Result.Success(responses);
+    }
+
+    private async Task<(string? BranchName, string? DepartmentName)> GetBranchAndDepartmentNamesAsync(
+    Guid? branchId, Guid? departmentId, CancellationToken ct)
+    {
+        string? branchName = branchId is { } bId
+            ? await _unitOfWork.Branches.Query().Where(b => b.Id == bId).Select(b => b.Name).FirstOrDefaultAsync(ct)
+            : null;
+
+        string? departmentName = departmentId is { } dId
+            ? await _unitOfWork.Departments.Query().Where(d => d.Id == dId).Select(d => d.Name).FirstOrDefaultAsync(ct)
+            : null;
+
+        return (branchName, departmentName);
     }
 
     public async Task<Result<UserResponse>> GetByIdAsync(Guid id, CancellationToken ct = default)
@@ -84,7 +111,9 @@ public class UserService : IUserService
             return Result.Failure<UserResponse>(UserErrors.NotFound);
 
         var roles = await _userManager.GetRolesAsync(user);
-        return Result.Success(ToResponse(user, roles));
+        var (branchName, departmentName) = await GetBranchAndDepartmentNamesAsync(user.BranchId, user.DepartmentId, ct);
+
+        return Result.Success(ToResponse(user, roles, branchName, departmentName));
     }
 
     public async Task<Result<UserResponse>> CreateAsync(CreateUserRequest request, CancellationToken ct = default)
@@ -151,7 +180,8 @@ public class UserService : IUserService
             return Result.Failure<UserResponse>(AuthErrors.FaliedToSendEmail);
         }
 
-        return Result.Success(ToResponse(user, validRoleNames));
+        var (branchName, departmentName) = await GetBranchAndDepartmentNamesAsync(request.BranchId, request.DepartmentId, ct);
+        return Result.Success(ToResponse(user, validRoleNames, branchName, departmentName));
     }
     public async Task<Result<UserResponse>> UpdateAsync(Guid id, UpdateUserRequest request, CancellationToken ct = default)
     {
@@ -173,8 +203,9 @@ public class UserService : IUserService
 
         await _userManager.UpdateAsync(user);
 
+        var (branchName, departmentName) = await GetBranchAndDepartmentNamesAsync(user.BranchId, user.DepartmentId, ct);
         var roles = await _userManager.GetRolesAsync(user);
-        return Result.Success(ToResponse(user, roles));
+        return Result.Success(ToResponse(user, roles, branchName, departmentName));
     }
 
     public async Task<Result> AssignRolesAsync(Guid id, AssignUserRolesRequest request, CancellationToken ct = default)
@@ -215,8 +246,8 @@ public class UserService : IUserService
         return Result.Success();
     }
 
-    private static UserResponse ToResponse(ApplicationUser user, IEnumerable<string> roles) => new(
-        user.Id, user.Email!, user.FullName, user.BranchId, user.DepartmentId, user.IsActive, roles.ToList());
+    private static UserResponse ToResponse(ApplicationUser user, IEnumerable<string> roles, string? branchName, string? departmentName) => new(
+    user.Id, user.Email!, user.FullName, user.BranchId, branchName, user.DepartmentId, departmentName, user.IsActive, roles.ToList());
 
     private async Task SendInviteEmail(ApplicationUser user, string code)
     {

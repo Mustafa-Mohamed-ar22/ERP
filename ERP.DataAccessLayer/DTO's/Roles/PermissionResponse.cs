@@ -1,0 +1,1 @@
+public record PermissionResponse(string Code, string Module, string Description);

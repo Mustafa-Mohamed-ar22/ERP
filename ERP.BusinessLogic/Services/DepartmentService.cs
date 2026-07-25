@@ -29,7 +29,7 @@ public class DepartmentService : IDepartmentService
 
         return Result.Success(department.Adapt<DepartmentResponse>());
     }
-
+    
     public async Task<Result<DepartmentResponse>> CreateAsync(CreateDepartmentRequest request, CancellationToken ct = default)
     {
         if (request.ParentDepartmentId is { } parentId)

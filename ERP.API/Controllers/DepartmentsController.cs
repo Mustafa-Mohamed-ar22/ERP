@@ -22,7 +22,7 @@ public class DepartmentsController : ControllerBase
         var result = await _departmentService.GetByIdAsync(id, cancellationToken);
         return result.IsSuccess ? Ok(result.Data) : result.ToProblem();
     }
-
+   
     [HttpPost]
     [Authorize(Policy = "core.departments.manage")]
     public async Task<ActionResult<DepartmentResponse>> CreateAsync(

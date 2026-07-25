@@ -8,6 +8,14 @@ public interface IUnitOfWork
     // Add one property per aggregate root as modules come online, e.g.:
     // IGenericRepository<Invoice> Invoices { get; }
     // Repository<T>(); // more generic way to get a repository for any entity type, if needed
+
+
+
+    IGenericRepository<Account> Accounts { get; }             
+    IGenericRepository<JournalEntry> JournalEntries { get; }  
+
+
     Task<int> SaveChangesAsync(CancellationToken ct = default);
+
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct = default);
 }

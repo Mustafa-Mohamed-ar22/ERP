@@ -1,6 +1,4 @@
-// Validators/ConfirmEmailRequestValidator.cs (ERP.BusinessLogic/Validators)
 using FluentValidation;
-// Validators/ConfirmEmailRequestValidator.cs
 public class ConfirmEmailRequestValidator : AbstractValidator<ConfirmEmailRequest>
 {
     public ConfirmEmailRequestValidator()

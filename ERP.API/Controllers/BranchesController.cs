@@ -23,6 +23,14 @@ public class BranchesController : ControllerBase
         return result.IsSuccess ? Ok(result.Data) : result.ToProblem();
     }
 
+
+    [HttpGet("{branchId:guid}/departments")]
+    public async Task<ActionResult<List<DepartmentResponse>>> GetByBranchIdAsync(Guid branchId,CancellationToken cancellationToken = default)
+    {
+        var result = await _branchService.GetDepartmentsByBranchIdAsync(branchId, cancellationToken);
+        return result.IsSuccess ? Ok(result.Data) : result.ToProblem();
+    }
+
     [HttpPost]
     [Authorize(Policy = "core.branches.manage")]
     public async Task<ActionResult<BranchResponse>> CreateAsync(

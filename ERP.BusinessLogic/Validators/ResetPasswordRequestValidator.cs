@@ -1,6 +1,4 @@
-// Validators/ResetPasswordRequestValidator.cs (ERP.BusinessLogic/Validators)
 using FluentValidation;
-// Validators/ResetPasswordRequestValidator.cs
 public class ResetPasswordRequestValidator : AbstractValidator<ResetPasswordRequest>
 {
     public ResetPasswordRequestValidator()

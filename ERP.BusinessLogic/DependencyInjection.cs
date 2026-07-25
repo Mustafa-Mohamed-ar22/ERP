@@ -15,9 +15,6 @@ public static class DependencyInjection
     {
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
-
-        // DependencyInjection.cs — add using Microsoft.Extensions.DependencyInjection.Extensions;
-
         services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
         {
             options.Password.RequiredLength = 8;
@@ -33,6 +30,10 @@ public static class DependencyInjection
         services.AddHttpContextAccessor();
         services.AddScoped<ITenantProvider, TenantProvider>();
 
+        services.AddScoped<IAccountService, AccountService>();
+        services.AddScoped<IJournalEntryService, JournalEntryService>();
+
+
         services.Configure<EmailSettings>(config.GetSection("EmailSettings"));
         services.Configure<DomainCORS>(config.GetSection("DomainCORS"));                   /// CORS POLICY
 
@@ -40,7 +41,7 @@ public static class DependencyInjection
         {
             options.AddPolicy("AllowAll", policy =>
             {
-                policy.WithOrigins("http://localhost:3000", "https://synaptech-erp.vercel.app")
+                policy.WithOrigins("http://localhost:3000", "https://synaptech-erp.vercel.app", "https://localhost:7086/")
                       .AllowAnyHeader()
                       .AllowAnyMethod()
                       .AllowCredentials();
@@ -60,7 +61,7 @@ public static class DependencyInjection
         services.AddScoped<IDepartmentService, DepartmentService>();
         services.AddScoped<IUserService, UserService>();
 
-
+        services.AddScoped<IRoleService, RoleService>();
 
         //services.AddScoped<ICompanyRepository, CompanyRepository>();
         //services.AddScoped<IBranchRepository, BranchRepository>();
