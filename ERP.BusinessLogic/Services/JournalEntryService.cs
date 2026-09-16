@@ -3,11 +3,13 @@ public class JournalEntryService : IJournalEntryService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUser;
+    private readonly INumberSequenceService _numberSequenceService;
 
-    public JournalEntryService(IUnitOfWork unitOfWork, ICurrentUserService currentUser)
+    public JournalEntryService(IUnitOfWork unitOfWork, ICurrentUserService currentUser, INumberSequenceService numberSequenceService)
     {
         _unitOfWork = unitOfWork;
         _currentUser = currentUser;
+        _numberSequenceService = numberSequenceService;
     }
 
     public async Task<Result<List<JournalEntryResponse>>> GetAllAsync(CancellationToken ct = default)
@@ -57,11 +59,11 @@ public class JournalEntryService : IJournalEntryService
         if (accountsWithChildren.Count > 0)
             return Result.Failure<JournalEntryResponse>(AccountErrors.NotPostable);
 
-        var entryCount = await _unitOfWork.JournalEntries.Query().CountAsync(ct);
+        var entryNumber = await _numberSequenceService.GetNextNumberAsync("JournalEntry", "JE", 6, ct);
         var entry = new JournalEntry
         {
             CompanyId = _currentUser.CompanyId,
-            EntryNumber = $"JE-{entryCount + 1:D6}",
+            EntryNumber = entryNumber,
             EntryDate = request.EntryDate,
             Description = request.Description,
             Status = JournalEntryStatus.Draft,
@@ -79,7 +81,6 @@ public class JournalEntryService : IJournalEntryService
 
         return await GetByIdAsync(entry.Id, ct);
     }
-
     public async Task<Result<JournalEntryResponse>> PostAsync(Guid id, CancellationToken ct = default)
     {
         var entry = await _unitOfWork.JournalEntries.Query()
@@ -123,11 +124,11 @@ public class JournalEntryService : IJournalEntryService
         if (alreadyReversed)
             return Result.Failure<JournalEntryResponse>(JournalEntryErrors.AlreadyReversed);
 
-        var entryCount = await _unitOfWork.JournalEntries.Query().CountAsync(ct);
+        var entryNumber = await _numberSequenceService.GetNextNumberAsync("JournalEntry", "JE", 6, ct);
         var reversal = new JournalEntry
         {
             CompanyId = _currentUser.CompanyId,
-            EntryNumber = $"JE-{entryCount + 1:D6}",
+            EntryNumber = entryNumber,
             EntryDate = DateTime.UtcNow,
             Description = $"Reversal of {original.EntryNumber}",
             Status = JournalEntryStatus.Posted,

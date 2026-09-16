@@ -1,0 +1,1 @@
+﻿public record TrialBalanceResponse(List<TrialBalanceLineResponse> Lines, decimal TotalDebitBalances, decimal TotalCreditBalances, bool IsBalanced);

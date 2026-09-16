@@ -12,4 +12,5 @@ public static class RoleErrors
     public static readonly Error CannotDeleteRoleWithUsers = new(
         "Role.CannotDeleteRoleWithUsers", "This role has users assigned and cannot be deleted",
         "هذا الدور له مستخدمون مرتبطون به ولا يمكن حذفه", StatusCodes.Status400BadRequest);
+
 }

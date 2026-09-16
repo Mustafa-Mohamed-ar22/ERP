@@ -1,7 +1,5 @@
-// Data/Configurations/ActivityLogConfiguration.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-// Data/Configurations/ActivityLogConfiguration.cs
 public class ActivityLogConfiguration : IEntityTypeConfiguration<ActivityLog>
 {
     public void Configure(EntityTypeBuilder<ActivityLog> builder)

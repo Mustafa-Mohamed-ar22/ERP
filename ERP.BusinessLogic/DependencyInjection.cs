@@ -32,21 +32,39 @@ public static class DependencyInjection
 
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IJournalEntryService, JournalEntryService>();
-
+        services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IWarehouseService, WarehouseService>();
+        services.AddScoped<IStockService, StockService>();
 
         services.Configure<EmailSettings>(config.GetSection("EmailSettings"));
         services.Configure<DomainCORS>(config.GetSection("DomainCORS"));                   /// CORS POLICY
+
+        //services.AddCors(options =>
+        //{
+        //    options.AddPolicy("AllowAll", policy =>
+        //    {
+        //        policy.WithOrigins("http://localhost:3000", "https://synaptech-erp.vercel.app", "https://localhost:7086", "http://localhost:5173"
+        //            , "http://localhost:5174", "https://erpweb-8xq6-qf126oc9i-mustafa-mohamed.vercel.app")
+        //              .AllowAnyHeader()
+        //              .AllowAnyMethod()
+        //              .AllowCredentials();
+        //    });
+        //});
+        var allowedOrigins = config.GetSection("AllowedOrigins").Get<string[]>() ?? [];
 
         services.AddCors(options =>
         {
             options.AddPolicy("AllowAll", policy =>
             {
-                policy.WithOrigins("http://localhost:3000", "https://synaptech-erp.vercel.app", "https://localhost:7086/")
+                policy.WithOrigins(allowedOrigins)
                       .AllowAnyHeader()
                       .AllowAnyMethod()
                       .AllowCredentials();
             });
         });
+
+        services.AddSingleton(new AllowedOriginsOptions(allowedOrigins));
+        services.AddHttpContextAccessor(); // required to read the current request in AuthService
 
         services.AddScoped<IEmailSender, EmailSender>();
         services.AddScoped<IAuthService, AuthService>();
@@ -63,13 +81,24 @@ public static class DependencyInjection
 
         services.AddScoped<IRoleService, RoleService>();
 
-        //services.AddScoped<ICompanyRepository, CompanyRepository>();
-        //services.AddScoped<IBranchRepository, BranchRepository>();
 
-        //services.AddScoped<IRoleService, RoleService>();
-        //services.AddScoped<IAuditService, AuditService>();
-        //services.AddScoped<INotificationService, NotificationService>();
 
+        services.AddScoped<ISupplierService, SupplierService>();
+        services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
+        services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<ICustomerService, CustomerService>();
+        services.AddScoped<ISalesOrderService,SalesOrderService>();
+        services.AddScoped<INumberSequenceService, NumberSequenceService>();
+        services.AddScoped<IAccountingSettingsService, AccountingSettingsService>();
+        services.AddScoped<IAccountingIntegrationService, AccountingIntegrationService>();
+
+
+        services.AddScoped<IEmployeeService, EmployeeService>();
+        services.AddScoped<ILeaveRequestService, LeaveRequestService>();
+        services.AddScoped<IAttendanceService, AttendanceService>();
+
+
+        services.AddScoped<IPermissionService, PermissionService>();
         services.AddMapster();
         services.AddValidators();
         return services;

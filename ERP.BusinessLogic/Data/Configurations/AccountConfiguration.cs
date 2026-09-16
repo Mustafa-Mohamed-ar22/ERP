@@ -9,7 +9,9 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
         builder.Property(a => a.Code).IsRequired().HasMaxLength(30);
         builder.Property(a => a.Name).IsRequired().HasMaxLength(200);
         builder.Property(a => a.AccountType).HasConversion<string>().HasMaxLength(20);
-        builder.HasIndex(a => new { a.CompanyId, a.Code }).IsUnique();
+        builder.HasIndex(a => new { a.CompanyId, a.Code }).IsUnique().HasSoftDeleteFilter(); ;
+        builder.HasIndex(a => new { a.CompanyId, a.Name }).IsUnique().HasSoftDeleteFilter(); ;
+
 
         builder.HasOne(a => a.ParentAccount)
             .WithMany(a => a.ChildAccounts)

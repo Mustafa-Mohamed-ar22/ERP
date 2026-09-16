@@ -13,6 +13,8 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
         builder.Property(c => c.Currency).IsRequired().HasMaxLength(10);
         builder.Property(c => c.Country).HasMaxLength(120);
 
+        builder.HasIndex(x => x.Name).IsUnique().HasSoftDeleteFilter(); ;
+
         builder.HasMany(c => c.Branches)
             .WithOne(b => b.Company)
             .HasForeignKey(b => b.CompanyId)

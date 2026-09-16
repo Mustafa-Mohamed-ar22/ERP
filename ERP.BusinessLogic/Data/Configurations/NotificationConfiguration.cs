@@ -1,7 +1,5 @@
-// Data/Configurations/NotificationConfiguration.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-// Data/Configurations/NotificationConfiguration.cs
 public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
 {
     public void Configure(EntityTypeBuilder<Notification> builder)

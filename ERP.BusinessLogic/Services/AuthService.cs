@@ -8,14 +8,16 @@ using System.Text;
 namespace ERP.BusinessLogic.Services
 {
     public class AuthService(
-        UserManager<ApplicationUser> userManager,
-        JwtProvider jwtProvider,
-        RoleManager<ApplicationRole> roleManager,
-        SignInManager<ApplicationUser> signInManager,
-        ApplicationDbContext context,
-        IEmailSender emailService,
-        IWebHostEnvironment webHostEnvironment,
-        IOptions<DomainCORS> options) : IAuthService
+    UserManager<ApplicationUser> userManager,
+    JwtProvider jwtProvider,
+    RoleManager<ApplicationRole> roleManager,
+    SignInManager<ApplicationUser> signInManager,
+    ApplicationDbContext context,
+    IEmailSender emailService,
+    IWebHostEnvironment webHostEnvironment,
+    IOptions<DomainCORS> options,
+    IHttpContextAccessor httpContextAccessor,
+    AllowedOriginsOptions allowedOrigins) : IAuthService
     {
         private readonly IEmailSender _emailService = emailService;
         private readonly IWebHostEnvironment _webHostEnvironment = webHostEnvironment;
@@ -43,7 +45,10 @@ namespace ERP.BusinessLogic.Services
             var existingUser = await userManager.FindByEmailAsync(request.Email);
             if (existingUser is not null)
                 return Result.Failure<RegisterResponse>(AuthErrors.EmailAlreadyExists);
-
+            var existingCompany = await context.Companies.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Name == request.CompanyName, ct);
+            if (existingCompany is not null)
+                return Result.Failure<RegisterResponse>
+                    (new Error("CompanyAlreadyExists", "A company with the same name already exists.", StatusCodes.Status400BadRequest));
             await using var transaction = await context.Database.BeginTransactionAsync(ct);
             try
             {
@@ -100,7 +105,33 @@ namespace ERP.BusinessLogic.Services
                     }));
 
                 await context.SaveChangesAsync(ct);
+                // AuthService.RegisterAsync — insert after the RolePermissions.AddRange(...) + SaveChangesAsync block,
+                // still inside the same transaction, before await transaction.CommitAsync(ct);
 
+                var starterAccounts = new List<Account>
+                {
+                    new() { CompanyId = company.Id, Code = "1000", Name = "Cash", AccountType = AccountType.Asset, IsActive = true },
+                    new() { CompanyId = company.Id, Code = "1100", Name = "Accounts Receivable", AccountType = AccountType.Asset, IsActive = true },
+                    new() { CompanyId = company.Id, Code = "1200", Name = "Inventory", AccountType = AccountType.Asset, IsActive = true },
+                    new() { CompanyId = company.Id, Code = "2000", Name = "Accounts Payable", AccountType = AccountType.Liability, IsActive = true },
+                    new() { CompanyId = company.Id, Code = "3000", Name = "Owner's Equity", AccountType = AccountType.Equity, IsActive = true },
+                    new() { CompanyId = company.Id, Code = "4000", Name = "Sales Revenue", AccountType = AccountType.Revenue, IsActive = true },
+                    new() { CompanyId = company.Id, Code = "5000", Name = "Cost of Goods Sold", AccountType = AccountType.Expense, IsActive = true },
+                    new() { CompanyId = company.Id, Code = "5100", Name = "Operating Expenses", AccountType = AccountType.Expense, IsActive = true },
+                };
+                context.Accounts.AddRange(starterAccounts);
+
+                context.AccountingSettings.Add(new AccountingSettings
+                {
+                    CompanyId = company.Id,
+                    InventoryAccountId = starterAccounts[2].Id,           // Inventory
+                    AccountsPayableAccountId = starterAccounts[3].Id,     // Accounts Payable
+                    AccountsReceivableAccountId = starterAccounts[1].Id,  // Accounts Receivable
+                    RevenueAccountId = starterAccounts[5].Id,             // Sales Revenue
+                    CostOfGoodsSoldAccountId = starterAccounts[6].Id      // Cost of Goods Sold
+                });
+
+                await context.SaveChangesAsync(ct);
                 await transaction.CommitAsync(ct);
 
                 var code = await userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -286,28 +317,55 @@ namespace ERP.BusinessLogic.Services
 
         private async Task SendEmail(ApplicationUser user, string code)
         {
+            var domain = ResolveClientDomain();
+
             var emailBody = EmailBodyBuilder.GenerateEmailBody(_webHostEnvironment.ContentRootPath,
                 "TemplateSendEmail", new Dictionary<string, string>
                 {
-                    { "{{name}}", user.FullName },
-                    { "{{action_url}}", $"{_domainOptions.Domain1}/auth/emailConfirmation?userId={user.Id}&code={code}" }
-                    //{ "{{action_url}}", $"https://localhost:7061/api/auth/confirm-email?userId={user.Id}&code={code}" }
+                { "{{name}}", user.FullName },
+                { "{{action_url}}", $"{domain}/auth/emailConfirmation?userId={user.Id}&code={code}" }
                 });
 
-            await _emailService.SendEmailAsync(user.Email!, "? Synaptech ERP: Verify your email", emailBody);
+            await _emailService.SendEmailAsync(user.Email!, "Synaptech ERP: Verify your email", emailBody);
         }
 
         private async Task SendResetPassword(ApplicationUser user, string code)
         {
+            var domain = ResolveClientDomain();
+
             var emailBody = EmailBodyBuilder.GenerateEmailBody(_webHostEnvironment.ContentRootPath,
                 "ForgetPasswordTemplate", new Dictionary<string, string>
                 {
-                    { "{{name}}", user.FullName },
-                    { "{{action_url}}", $"{_domainOptions.Domain1}/auth/forgetPassword?email={Uri.EscapeDataString(user.Email!)}&code={code}" }
-                    //{ "{{action_url}}", $"https://localhost:7061/api/auth/reset-password?email={Uri.EscapeDataString(user.Email!)}&code={code}" }
+                { "{{name}}", user.FullName },
+                { "{{action_url}}", $"{domain}/auth/forgetPassword?email={Uri.EscapeDataString(user.Email!)}&code={code}" }
                 });
 
-            await _emailService.SendEmailAsync(user.Email!, "? Synaptech ERP: Reset your password", emailBody);
+            await _emailService.SendEmailAsync(user.Email!, "Synaptech ERP: Reset your password", emailBody);
+        }
+        private string ResolveClientDomain()
+        {
+            var request = httpContextAccessor.HttpContext?.Request;
+            if (request is null)
+                return _domainOptions.Domain1; // background job / no HTTP context, use default
+
+            // Prefer the Origin header (sent on cross-origin fetch/XHR calls)
+            var origin = request.Headers.Origin.ToString();
+
+            // Fallback: derive origin from Referer if Origin wasn't sent
+            if (string.IsNullOrWhiteSpace(origin) &&
+                Uri.TryCreate(request.Headers.Referer.ToString(), UriKind.Absolute, out var refererUri))
+            {
+                origin = $"{refererUri.Scheme}://{refererUri.Authority}";
+            }
+
+            if (string.IsNullOrWhiteSpace(origin))
+                return _domainOptions.Domain1;
+
+            // Only trust it if it's in the same whitelist CORS uses
+            var isAllowed = allowedOrigins.Origins.Any(o =>
+                string.Equals(o.TrimEnd('/'), origin.TrimEnd('/'), StringComparison.OrdinalIgnoreCase));
+
+            return isAllowed ? origin.TrimEnd('/') : _domainOptions.Domain1;
         }
     }
 }

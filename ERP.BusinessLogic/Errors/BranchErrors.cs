@@ -8,4 +8,7 @@ public static class BranchErrors
     public static readonly Error DuplicateCode = new(
         "Branch.DuplicateCode", "A branch with this code already exists",
         "يوجد فرع بنفس الكود بالفعل", StatusCodes.Status409Conflict);
+    public static readonly Error DuplicateName = new(
+        "Branch.DuplicateName", "A branch with this name already exists",
+        "يوجد فرع بنفس الاسم بالفعل", StatusCodes.Status409Conflict);
 }

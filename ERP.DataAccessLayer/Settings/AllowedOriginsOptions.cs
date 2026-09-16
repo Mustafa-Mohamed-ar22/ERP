@@ -1,0 +1,1 @@
+﻿public record AllowedOriginsOptions(string[] Origins);

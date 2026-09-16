@@ -1,29 +1,22 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionRequirement>
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IPermissionService _permissionService;
 
-    public PermissionAuthorizationHandler(ApplicationDbContext context) => _context = context;
+    public PermissionAuthorizationHandler(IPermissionService permissionService)
+        => _permissionService = permissionService;
 
     protected override async Task HandleRequirementAsync(
         AuthorizationHandlerContext context, PermissionRequirement requirement)
     {
-        var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!Guid.TryParse(userIdClaim, out var userId)) return;
-
         var roleNames = context.User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
-        if (roleNames.Count == 0) return;
+        if (roleNames.Count == 0) return; // roleless employee — no permission-based policy passes, which is correct
 
-        var hasPermission = await _context.RolePermissions
-            .IgnoreQueryFilters()
-            .Include(rp => rp.Role)
-            .Include(rp => rp.Permission)
-            .AnyAsync(rp => roleNames.Contains(rp.Role.Name!) && rp.Permission.Code == requirement.Permission);
+        var permissions = await _permissionService.GetPermissionsForRolesAsync(roleNames);
 
-        if (hasPermission)
+        if (permissions.Contains(requirement.Permission))
             context.Succeed(requirement);
     }
 }

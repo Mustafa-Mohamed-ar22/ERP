@@ -12,10 +12,29 @@ public interface IUnitOfWork
 
 
     IGenericRepository<Account> Accounts { get; }             
-    IGenericRepository<JournalEntry> JournalEntries { get; }  
+    IGenericRepository<JournalEntry> JournalEntries { get; }
+
+    IGenericRepository<Product> Products { get; }
+    IGenericRepository<Warehouse> Warehouses { get; }
+    IGenericRepository<StockItem> StockItems { get; }
+    IGenericRepository<StockMovement> StockMovements { get; }
+    IGenericRepository<ProductCategory> ProductCategories { get; }
+    IGenericRepository<PurchaseOrderLine> PurchaseOrderLines { get; }
+    IGenericRepository<SalesOrderLine> SalesOrderLines { get; }
+    IGenericRepository<Supplier> Suppliers { get; }
+    IGenericRepository<PurchaseOrder> PurchaseOrders { get; }
+
+    IGenericRepository<Customer> Customers { get; }
+    IGenericRepository<SalesOrder> SalesOrders { get; }
 
 
+    IGenericRepository<Employee> Employees { get; }
+    IGenericRepository<LeaveRequest> LeaveRequests { get; }
+    IGenericRepository<AttendanceRecord> AttendanceRecords { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct = default);
+
+    IExecutionStrategy CreateExecutionStrategy();
+
 }

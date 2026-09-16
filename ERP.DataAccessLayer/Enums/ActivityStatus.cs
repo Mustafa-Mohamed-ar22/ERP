@@ -1,0 +1,1 @@
+public enum ActivityStatus { Pending, Completed, Cancelled }

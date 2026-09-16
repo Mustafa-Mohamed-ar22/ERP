@@ -1,0 +1,1 @@
+public enum GLPostingOutcome { Skipped, Posted }

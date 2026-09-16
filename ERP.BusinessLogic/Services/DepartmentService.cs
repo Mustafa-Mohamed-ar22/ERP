@@ -38,7 +38,10 @@ public class DepartmentService : IDepartmentService
             if (!parentExists)
                 return Result.Failure<DepartmentResponse>(DepartmentErrors.ParentNotFound);
         }
-
+        var existingDepartment = await _unitOfWork.Departments.Query()
+            .AnyAsync(d=>d.Name == request.Name, ct);
+        if (existingDepartment)
+            return Result.Failure<DepartmentResponse>(DepartmentErrors.DepartmenExists);
         var department = new Department
         {
             CompanyId = _currentUser.CompanyId,
@@ -84,6 +87,10 @@ public class DepartmentService : IDepartmentService
                 depth++;
             }
         }
+        var existingDepartmentNaame = await _unitOfWork.Customers.Query()
+            .AnyAsync(c => c.Id != id && c.Name == request.Name, ct);
+        if (existingDepartmentNaame)
+            return Result.Failure<DepartmentResponse>(DepartmentErrors.DepartmenExists);
 
         department.Name = request.Name;
         department.BranchId = request.BranchId;

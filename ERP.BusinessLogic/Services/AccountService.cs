@@ -81,8 +81,14 @@ public class AccountService : IAccountService
         };
 
         await _unitOfWork.Accounts.AddAsync(account, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
-
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            return Result.Failure<AccountResponse>(AccountErrors.DuplicateCode);
+        }
         return Result.Success(ToResponse(account));
     }
 
@@ -105,8 +111,14 @@ public class AccountService : IAccountService
         account.IsActive = request.IsActive;
 
         _unitOfWork.Accounts.Update(account);
-        await _unitOfWork.SaveChangesAsync(ct);
-
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            return Result.Failure<AccountResponse>(WarehouseErrors.DuplicateCode);
+        }
         return Result.Success(ToResponse(account));
     }
 
@@ -130,7 +142,50 @@ public class AccountService : IAccountService
 
         return Result.Success();
     }
+    public async Task<Result<TrialBalanceResponse>> GetTrialBalanceAsync(CancellationToken ct = default)
+    {
+        var accounts = await _unitOfWork.Accounts.Query().OrderBy(a => a.Code).ToListAsync(ct);
 
+        // Group in SQL rather than pulling every posted line into memory — scales better as journal history grows.
+        var totalsByAccount = await _unitOfWork.JournalEntries.Query()
+            .Where(j => j.Status == JournalEntryStatus.Posted)
+            .SelectMany(j => j.Lines)
+            .GroupBy(l => l.AccountId)
+            .Select(g => new { AccountId = g.Key, TotalDebit = g.Sum(l => l.Debit), TotalCredit = g.Sum(l => l.Credit) })
+            .ToDictionaryAsync(g => g.AccountId, g => g, ct);
+
+        var lines = new List<TrialBalanceLineResponse>();
+        foreach (var account in accounts)
+        {
+            totalsByAccount.TryGetValue(account.Id, out var totals);
+            var totalDebit = totals?.TotalDebit ?? 0;
+            var totalCredit = totals?.TotalCredit ?? 0;
+
+            var isDebitNormal = account.AccountType is AccountType.Asset or AccountType.Expense;
+            var balance = isDebitNormal ? totalDebit - totalCredit : totalCredit - totalDebit;
+
+            decimal debitBalance, creditBalance;
+            if (isDebitNormal)
+            {
+                debitBalance = balance >= 0 ? balance : 0;
+                creditBalance = balance < 0 ? -balance : 0;
+            }
+            else
+            {
+                creditBalance = balance >= 0 ? balance : 0;
+                debitBalance = balance < 0 ? -balance : 0;
+            }
+
+            lines.Add(new TrialBalanceLineResponse(
+                account.Id, account.Code, account.Name, account.AccountType.ToString(),
+                totalDebit, totalCredit, debitBalance, creditBalance));
+        }
+
+        var totalDebitBalances = lines.Sum(l => l.DebitBalance);
+        var totalCreditBalances = lines.Sum(l => l.CreditBalance);
+
+        return Result.Success(new TrialBalanceResponse(lines, totalDebitBalances, totalCreditBalances, totalDebitBalances == totalCreditBalances));
+    }
     private static AccountResponse ToResponse(Account account) => new(
         account.Id, account.Code, account.Name, account.AccountType.ToString(), account.ParentAccountId, account.IsActive);
 }

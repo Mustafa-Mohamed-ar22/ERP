@@ -118,6 +118,8 @@ public class UserService : IUserService
 
     public async Task<Result<UserResponse>> CreateAsync(CreateUserRequest request, CancellationToken ct = default)
     {
+        var roleNames = request.RoleNames ?? new List<string>();
+
         var existingUser = await _userManager.FindByEmailAsync(request.Email);
         if (existingUser is not null)
             return Result.Failure<UserResponse>(UserErrors.EmailAlreadyExists);
@@ -127,13 +129,12 @@ public class UserService : IUserService
             return Result.Failure<UserResponse>(validationError);
 
         var validRoles = await _roleManager.Roles.IgnoreQueryFilters()
-            .Where(r => r.CompanyId == _currentUser.CompanyId && request.RoleNames.Contains(r.Name!))
+            .Where(r => r.CompanyId == _currentUser.CompanyId && roleNames.Contains(r.Name!))
             .Select(r => new { r.Id, r.Name })
             .ToListAsync(ct);
 
-        if (validRoles.Count != request.RoleNames.Distinct().Count())
+        if (validRoles.Count != roleNames.Distinct().Count())
             return Result.Failure<UserResponse>(UserErrors.InvalidRoles);
-
 
         var user = new ApplicationUser
         {
@@ -210,27 +211,36 @@ public class UserService : IUserService
 
     public async Task<Result> AssignRolesAsync(Guid id, AssignUserRolesRequest request, CancellationToken ct = default)
     {
+        var roleNames = request.RoleNames ?? new List<string>();
+
         var user = await _userManager.Users
             .FirstOrDefaultAsync(u => u.Id == id && u.CompanyId == _currentUser.CompanyId, ct);
 
         if (user is null)
             return Result.Failure(UserErrors.NotFound);
 
-        var validRoleNames = await _roleManager.Roles.IgnoreQueryFilters()
-            .Where(r => r.CompanyId == _currentUser.CompanyId && request.RoleNames.Contains(r.Name!))
-            .Select(r => r.Name!)
+        var validRoles = await _roleManager.Roles.IgnoreQueryFilters()
+            .Where(r => r.CompanyId == _currentUser.CompanyId && roleNames.Contains(r.Name!))
             .ToListAsync(ct);
 
-        if (validRoleNames.Count != request.RoleNames.Distinct().Count())
+        if (validRoles.Count != roleNames.Distinct().Count())
             return Result.Failure(UserErrors.InvalidRoles);
 
-        var currentRoles = await _userManager.GetRolesAsync(user);
-        await _userManager.RemoveFromRolesAsync(user, currentRoles);
-        await _userManager.AddToRolesAsync(user, validRoleNames);
+        var currentUserRoles = await _context.UserRoles
+            .Where(ur => ur.UserId == user.Id)
+            .Join(_context.Roles.IgnoreQueryFilters().Where(r => r.CompanyId == _currentUser.CompanyId),
+                  ur => ur.RoleId, r => r.Id, (ur, r) => ur)
+            .ToListAsync(ct);
 
+        _context.UserRoles.RemoveRange(currentUserRoles);
+        _context.UserRoles.AddRange(validRoles.Select(r => new IdentityUserRole<Guid>
+        {
+            UserId = user.Id,
+            RoleId = r.Id
+        }));
+        await _context.SaveChangesAsync(ct);
         return Result.Success();
     }
-
     public async Task<Result> DeactivateAsync(Guid id, CancellationToken ct = default)
     {
         var user = await _userManager.Users

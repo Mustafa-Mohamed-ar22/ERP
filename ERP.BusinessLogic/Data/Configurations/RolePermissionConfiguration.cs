@@ -1,7 +1,5 @@
-// Data/Configurations/RolePermissionConfiguration.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-// Data/Configurations/RolePermissionConfiguration.cs
 public class RolePermissionConfiguration : IEntityTypeConfiguration<RolePermission>
 {
     public void Configure(EntityTypeBuilder<RolePermission> builder)

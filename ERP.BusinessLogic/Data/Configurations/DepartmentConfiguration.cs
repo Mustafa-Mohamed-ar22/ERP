@@ -7,7 +7,7 @@ public class DepartmentConfiguration : IEntityTypeConfiguration<Department>
         builder.ToTable("Departments");
         builder.HasKey(d => d.Id);
         builder.Property(d => d.Name).IsRequired().HasMaxLength(150);
-
+        builder.HasIndex(x => new { x.CompanyId, x.Name }).IsUnique().HasSoftDeleteFilter(); ;
         builder.HasOne(d => d.ParentDepartment)
             .WithMany()
             .HasForeignKey(d => d.ParentDepartmentId)

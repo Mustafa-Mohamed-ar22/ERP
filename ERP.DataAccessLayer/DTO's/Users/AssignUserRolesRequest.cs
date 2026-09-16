@@ -1,1 +1,1 @@
-public record AssignUserRolesRequest(List<string> RoleNames);
+public record AssignUserRolesRequest(List<string>? RoleNames);

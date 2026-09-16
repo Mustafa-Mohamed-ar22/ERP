@@ -17,9 +17,9 @@ public class AccountsController : ControllerBase
         return result.IsSuccess ? Ok(result.Data) : result.ToProblem();
     }
 
-    [HttpGet("{id:guid}")]
+    [HttpGet("{id:Guid}")]
     [Authorize(Policy = "accounting.accounts.view")]
-    public async Task<ActionResult<AccountResponse>> GetByIdAsync([FromQuery]Guid id, CancellationToken cancellationToken = default!)
+    public async Task<ActionResult<AccountResponse>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default!)
     {
         var result = await _accountService.GetByIdAsync(id, cancellationToken);
         return result.IsSuccess ? Ok(result.Data) : result.ToProblem();
@@ -57,5 +57,25 @@ public class AccountsController : ControllerBase
     {
         var result = await _accountService.DeleteAsync(id, cancellationToken);
         return result.IsSuccess ? Ok() : result.ToProblem();
+    }
+
+    [HttpGet("account-types")]
+    [Authorize(Policy = "accounting.accounts.view")]
+    public ActionResult<List<AccountTypeResponse>> GetAccountTypes()
+    {
+        var types = Enum.GetValues<AccountType>()
+            .Select(t => new AccountTypeResponse(
+                t.ToString(),
+                t is AccountType.Asset or AccountType.Expense ? "Debit" : "Credit"))
+            .ToList();
+
+        return Ok(types);
+    }
+    [HttpGet("trial-balance")]
+    [Authorize(Policy = "accounting.accounts.view")]
+    public async Task<ActionResult<TrialBalanceResponse>> GetTrialBalanceAsync(CancellationToken cancellationToken = default!)
+    {
+        var result = await _accountService.GetTrialBalanceAsync(cancellationToken);
+        return result.IsSuccess ? Ok(result.Data) : result.ToProblem();
     }
 }

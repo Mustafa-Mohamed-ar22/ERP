@@ -9,7 +9,7 @@ public class JournalEntryConfiguration : IEntityTypeConfiguration<JournalEntry>
         builder.Property(j => j.EntryNumber).IsRequired().HasMaxLength(30);
         builder.Property(j => j.Description).HasMaxLength(500);
         builder.Property(j => j.Status).HasConversion<string>().HasMaxLength(20);
-        builder.HasIndex(j => new { j.CompanyId, j.EntryNumber }).IsUnique();
+        builder.HasIndex(j => new { j.CompanyId, j.EntryNumber }).IsUnique().HasSoftDeleteFilter(); ;
 
         builder.HasOne(j => j.ReversalOfEntry)
             .WithMany()

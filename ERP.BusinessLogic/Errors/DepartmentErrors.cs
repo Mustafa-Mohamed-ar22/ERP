@@ -12,4 +12,7 @@ public static class DepartmentErrors
     public static readonly Error ParentNotFound = new(
         "Department.ParentNotFound", "The specified parent department was not found",
         "الإدارة الرئيسية المحددة غير موجودة", StatusCodes.Status400BadRequest);
+    public static readonly Error DepartmenExists = new (
+        "Department.DepartmenExists", "Department with this name is already existed",
+        "يوجد قسم بنفس الاسم", StatusCodes.Status400BadRequest);
 }

@@ -42,6 +42,10 @@ public class BranchService : IBranchService
         var duplicateExists = await _unitOfWork.Branches.Query().AnyAsync(b => b.Code == request.Code, ct);
         if (duplicateExists)
             return Result.Failure<BranchResponse>(BranchErrors.DuplicateCode);
+        var existingBranchName = await _unitOfWork.Branches.Query().AnyAsync(b => b.Name == request.Name, ct);
+        if (existingBranchName)
+            return Result.Failure<BranchResponse>(BranchErrors.DuplicateName);
+
 
         var branch = new Branch
         {
@@ -55,8 +59,14 @@ public class BranchService : IBranchService
         };
 
         await _unitOfWork.Branches.AddAsync(branch, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
-
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            return Result.Failure<BranchResponse>(BranchErrors.DuplicateCode);
+        }
         return Result.Success(branch.Adapt<BranchResponse>());
     }
 
@@ -70,6 +80,9 @@ public class BranchService : IBranchService
             .AnyAsync(b => b.Code == request.Code && b.Id != id, ct);
         if (duplicateExists)
             return Result.Failure<BranchResponse>(BranchErrors.DuplicateCode);
+        var existingBranchName = await _unitOfWork.Branches.Query().AnyAsync(b => b.Id != id && b.Name == request.Name, ct);
+        if (existingBranchName)
+            return Result.Failure<BranchResponse>(BranchErrors.DuplicateName);
 
         branch.Name = request.Name;
         branch.Code = request.Code;
@@ -79,8 +92,14 @@ public class BranchService : IBranchService
         branch.IsActive = request.IsActive;
 
         _unitOfWork.Branches.Update(branch);
-        await _unitOfWork.SaveChangesAsync(ct);
-
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            return Result.Failure<BranchResponse>(BranchErrors.DuplicateCode);
+        }
         return Result.Success(branch.Adapt<BranchResponse>());
     }
 

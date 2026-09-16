@@ -6,4 +6,5 @@
     Task<Result<AccountResponse>> CreateAsync(CreateAccountRequest request, CancellationToken ct = default);
     Task<Result<AccountResponse>> UpdateAsync(Guid id, UpdateAccountRequest request, CancellationToken ct = default);
     Task<Result> DeleteAsync(Guid id, CancellationToken ct = default);
+    Task<Result<TrialBalanceResponse>> GetTrialBalanceAsync(CancellationToken ct = default);
 }

@@ -1,7 +1,5 @@
-// Data/Configurations/FileAttachmentConfiguration.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-// Data/Configurations/FileAttachmentConfiguration.cs
 public class FileAttachmentConfiguration : IEntityTypeConfiguration<FileAttachment>
 {
     public void Configure(EntityTypeBuilder<FileAttachment> builder)

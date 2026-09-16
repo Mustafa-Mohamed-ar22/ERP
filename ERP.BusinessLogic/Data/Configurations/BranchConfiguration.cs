@@ -1,7 +1,5 @@
-// Data/Configurations/BranchConfiguration.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-// Data/Configurations/BranchConfiguration.cs
 public class BranchConfiguration : IEntityTypeConfiguration<Branch>
 {
     public void Configure(EntityTypeBuilder<Branch> builder)
@@ -12,8 +10,10 @@ public class BranchConfiguration : IEntityTypeConfiguration<Branch>
         builder.Property(b => b.Code).IsRequired().HasMaxLength(30);
         builder.Property(b => b.Address).HasMaxLength(300);
         builder.Property(b => b.Phone).HasMaxLength(30);
-        builder.HasIndex(b => new { b.CompanyId, b.Code }).IsUnique();
-
+        builder.HasIndex(b => new { b.CompanyId, b.Code }).IsUnique().HasSoftDeleteFilter(); ;
+        builder.HasIndex(x => new {x.CompanyId ,x.Name }).IsUnique().HasSoftDeleteFilter(); ;
+        builder.HasIndex(x => new {x.CompanyId ,x.Phone }).IsUnique().HasSoftDeleteFilter(); ;
+        
         builder.HasMany(b => b.Departments)
             .WithOne(d => d.Branch)
             .HasForeignKey(d => d.BranchId)
