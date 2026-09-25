@@ -1,0 +1,1 @@
+﻿public record GLPostingResult(GLPostingOutcome Outcome, Guid? JournalEntryId);

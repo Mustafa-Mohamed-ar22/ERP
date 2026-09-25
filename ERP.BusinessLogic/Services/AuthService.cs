@@ -128,7 +128,8 @@ namespace ERP.BusinessLogic.Services
                     AccountsPayableAccountId = starterAccounts[3].Id,     // Accounts Payable
                     AccountsReceivableAccountId = starterAccounts[1].Id,  // Accounts Receivable
                     RevenueAccountId = starterAccounts[5].Id,             // Sales Revenue
-                    CostOfGoodsSoldAccountId = starterAccounts[6].Id      // Cost of Goods Sold
+                    CostOfGoodsSoldAccountId = starterAccounts[6].Id ,     // Cost of Goods Sold
+                    CashAccountId = starterAccounts[0].Id
                 });
 
                 await context.SaveChangesAsync(ct);

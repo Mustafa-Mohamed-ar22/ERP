@@ -78,4 +78,30 @@ public class AccountsController : ControllerBase
         var result = await _accountService.GetTrialBalanceAsync(cancellationToken);
         return result.IsSuccess ? Ok(result.Data) : result.ToProblem();
     }
+    [HttpGet("balance-sheet")]
+    [Authorize(Policy = "accounting.accounts.view")]
+    public async Task<ActionResult<BalanceSheetResponse>> GetBalanceSheetAsync(
+    [FromQuery] DateTime? asOfDate, CancellationToken cancellationToken = default!)
+    {
+        var result = await _accountService.GetBalanceSheetAsync(asOfDate ?? DateTime.UtcNow, cancellationToken);
+        return result.IsSuccess ? Ok(result.Data) : result.ToProblem();
+    }
+
+    [HttpGet("income-statement")]
+    [Authorize(Policy = "accounting.accounts.view")]
+    public async Task<ActionResult<IncomeStatementResponse>> GetIncomeStatementAsync(
+        [FromQuery] DateTime periodStart, [FromQuery] DateTime periodEnd, CancellationToken cancellationToken = default!)
+    {
+        var result = await _accountService.GetIncomeStatementAsync(periodStart, periodEnd, cancellationToken);
+        return result.IsSuccess ? Ok(result.Data) : result.ToProblem();
+    }
+
+    [HttpGet("cash-flow-summary")]
+    [Authorize(Policy = "accounting.accounts.view")]
+    public async Task<ActionResult<CashFlowSummaryResponse>> GetCashFlowSummaryAsync(
+        [FromQuery] DateTime periodStart, [FromQuery] DateTime periodEnd, CancellationToken cancellationToken = default!)
+    {
+        var result = await _accountService.GetCashFlowSummaryAsync(periodStart, periodEnd, cancellationToken);
+        return result.IsSuccess ? Ok(result.Data) : result.ToProblem();
+    }
 }

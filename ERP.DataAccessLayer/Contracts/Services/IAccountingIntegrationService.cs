@@ -5,4 +5,7 @@ public interface IAccountingIntegrationService
 
     Task<Result<GLPostingOutcome>> PostShipmentAsync(
         string orderNumber, List<(Guid ProductId, decimal Quantity, decimal SalePrice, decimal UnitCost)> shippedLines, CancellationToken ct = default);
+
+    Task<Result<GLPostingResult>> PostCashSaleAsync(
+        string orderNumber, List<(Guid ProductId, decimal Quantity, decimal SalePrice, decimal UnitCost)> lines, CancellationToken ct = default);
 }

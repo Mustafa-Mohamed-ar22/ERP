@@ -20,13 +20,14 @@ public class AccountingSettingsService : IAccountingSettingsService
     public async Task<Result<AccountingSettingsResponse>> UpdateAsync(UpdateAccountingSettingsRequest request, CancellationToken ct = default)
     {
         var expectedTypes = new (Guid? Id, AccountType Expected)[]
-        {
-            (request.InventoryAccountId, AccountType.Asset),
-            (request.AccountsPayableAccountId, AccountType.Liability),
-            (request.AccountsReceivableAccountId, AccountType.Asset),
-            (request.RevenueAccountId, AccountType.Revenue),
-            (request.CostOfGoodsSoldAccountId, AccountType.Expense)
-        };
+{
+    (request.InventoryAccountId, AccountType.Asset),
+    (request.AccountsPayableAccountId, AccountType.Liability),
+    (request.AccountsReceivableAccountId, AccountType.Asset),
+    (request.RevenueAccountId, AccountType.Revenue),
+    (request.CostOfGoodsSoldAccountId, AccountType.Expense),
+    (request.CashAccountId, AccountType.Asset)   // NEW — Cash is an Asset account, same type as Inventory/AR
+};
 
         foreach (var (id, expectedType) in expectedTypes)
         {
@@ -46,7 +47,7 @@ public class AccountingSettingsService : IAccountingSettingsService
         settings.AccountsReceivableAccountId = request.AccountsReceivableAccountId;
         settings.RevenueAccountId = request.RevenueAccountId;
         settings.CostOfGoodsSoldAccountId = request.CostOfGoodsSoldAccountId;
-
+        settings.CashAccountId = request.CashAccountId;   
         await _context.SaveChangesAsync(ct);
 
         return Result.Success(ToResponse(settings));
@@ -66,8 +67,8 @@ public class AccountingSettingsService : IAccountingSettingsService
 
         return settings;
     }
-
+        
     private static AccountingSettingsResponse ToResponse(AccountingSettings s) => new(
-        s.InventoryAccountId, s.AccountsPayableAccountId, s.AccountsReceivableAccountId,
-        s.RevenueAccountId, s.CostOfGoodsSoldAccountId);
+    s.InventoryAccountId, s.AccountsPayableAccountId, s.AccountsReceivableAccountId,
+    s.RevenueAccountId, s.CostOfGoodsSoldAccountId, s.CashAccountId);   
 }

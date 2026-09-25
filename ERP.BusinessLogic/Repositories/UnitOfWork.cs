@@ -26,6 +26,12 @@ public class UnitOfWork : IUnitOfWork
         Employees = new GenericRepository<Employee>(_context);
         LeaveRequests = new GenericRepository<LeaveRequest>(_context);
         AttendanceRecords = new GenericRepository<AttendanceRecord>(_context);
+        CashierShifts = new GenericRepository<CashierShift>(_context);
+        CashierShiftCashMovements = new GenericRepository<CashierShiftCashMovement>(_context);
+        CashierOrders = new GenericRepository<CashierOrder>(_context);
+        CashierInvoices = new GenericRepository<CashierInvoice>(_context);
+        AccountingSettings = new GenericRepository<AccountingSettings>(_context);
+        Notifications = new GenericRepository<Notification>(_context);
     }
 
     public IGenericRepository<Company> Companies { get; }
@@ -58,6 +64,18 @@ public class UnitOfWork : IUnitOfWork
     public IGenericRepository<LeaveRequest> LeaveRequests { get; }
 
     public IGenericRepository<AttendanceRecord> AttendanceRecords { get; }
+
+    public IGenericRepository<CashierShift> CashierShifts { get; }
+
+    public IGenericRepository<CashierShiftCashMovement> CashierShiftCashMovements { get; }
+
+    public IGenericRepository<CashierOrder> CashierOrders { get; }
+
+    public IGenericRepository<CashierInvoice> CashierInvoices { get; }
+
+    public IGenericRepository<AccountingSettings> AccountingSettings { get; }
+
+    public IGenericRepository<Notification> Notifications { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken ct = default) => _context.SaveChangesAsync(ct);
 

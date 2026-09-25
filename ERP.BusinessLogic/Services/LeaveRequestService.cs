@@ -5,11 +5,13 @@ public class LeaveRequestService : ILeaveRequestService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUser;
-
-    public LeaveRequestService(IUnitOfWork unitOfWork, ICurrentUserService currentUser)
+    private readonly INotificationService _notificationService;
+    public LeaveRequestService
+        (IUnitOfWork unitOfWork, ICurrentUserService currentUser, INotificationService notificationService)
     {
         _unitOfWork = unitOfWork;
         _currentUser = currentUser;
+        _notificationService = notificationService;
     }
 
     public async Task<Result<List<LeaveRequestResponse>>> GetAllAsync(CancellationToken ct = default)
@@ -77,14 +79,12 @@ public class LeaveRequestService : ILeaveRequestService
     public async Task<Result<LeaveRequestResponse>> RejectAsync(Guid id, CancellationToken ct = default)
         => await ResolveAsync(id, LeaveRequestStatus.Rejected, ct);
 
+    // LeaveRequestService.cs — inject INotificationService, update ResolveAsync (called by both Approve/Reject)
     private async Task<Result<LeaveRequestResponse>> ResolveAsync(Guid id, LeaveRequestStatus newStatus, CancellationToken ct)
     {
-        var request = await _unitOfWork.LeaveRequests.GetByIdAsync(id, ct);
-        if (request is null)
-            return Result.Failure<LeaveRequestResponse>(LeaveRequestErrors.NotFound);
-
-        if (request.Status != LeaveRequestStatus.Pending)
-            return Result.Failure<LeaveRequestResponse>(LeaveRequestErrors.NotPending);
+        var request = await _unitOfWork.LeaveRequests.Query().Include(l => l.Employee).FirstOrDefaultAsync(l => l.Id == id, ct);
+        if (request is null) return Result.Failure<LeaveRequestResponse>(LeaveRequestErrors.NotFound);
+        if (request.Status != LeaveRequestStatus.Pending) return Result.Failure<LeaveRequestResponse>(LeaveRequestErrors.NotPending);
 
         request.Status = newStatus;
         request.ApprovedBy = _currentUser.UserId;
@@ -92,6 +92,16 @@ public class LeaveRequestService : ILeaveRequestService
 
         _unitOfWork.LeaveRequests.Update(request);
         await _unitOfWork.SaveChangesAsync(ct);
+
+        if (request.Employee.UserId is { } employeeUserId)
+        {
+            var statusText = newStatus == LeaveRequestStatus.Approved ? "تمت الموافقة على" : "تم رفض";
+            await _notificationService.NotifyUserAsync(employeeUserId,
+                "تحديث طلب الإجازة",
+                $"{statusText} طلب إجازتك من {request.StartDate:yyyy-MM-dd} إلى {request.EndDate:yyyy-MM-dd}.",
+                newStatus == LeaveRequestStatus.Approved ? NotificationType.Success : NotificationType.Warning,
+                null, ct);
+        }
 
         return await GetByIdAsync(request.Id, ct);
     }

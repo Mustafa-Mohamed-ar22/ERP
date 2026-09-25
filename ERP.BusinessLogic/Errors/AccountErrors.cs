@@ -24,4 +24,11 @@ public static class AccountErrors
     public static readonly Error NotPostable = new(
         "Account.NotPostable", "Journal lines can only post to accounts with no sub-accounts",
         "لا يمكن الترحيل إلا إلى الحسابات التي ليس لها حسابات فرعية", StatusCodes.Status400BadRequest);
+    public static readonly Error InvalidPeriod = new(
+        "Account.InvalidPeriod", "Period end must be on or after period start",
+        "يجب أن يكون تاريخ نهاية الفترة بعد أو يساوي تاريخ البداية", StatusCodes.Status400BadRequest);
+
+    public static readonly Error CashAccountNotConfigured = new(
+        "Account.CashAccountNotConfigured", "Cash account is not configured in Accounting Settings",
+        "لم يتم تكوين حساب النقدية في إعدادات المحاسبة", StatusCodes.Status400BadRequest);
 }

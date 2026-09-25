@@ -13,8 +13,14 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
+        services.AddScoped<AuditableEntitySaveChangesInterceptor>();
+
+        services.AddDbContext<ApplicationDbContext>((sp, options) =>
+        {
+            options.UseSqlServer(config.GetConnectionString("DefaultConnection"));
+            options.AddInterceptors(sp.GetRequiredService<AuditableEntitySaveChangesInterceptor>());
+        });
+
         services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
         {
             options.Password.RequiredLength = 8;
@@ -97,8 +103,14 @@ public static class DependencyInjection
         services.AddScoped<ILeaveRequestService, LeaveRequestService>();
         services.AddScoped<IAttendanceService, AttendanceService>();
 
-
+        services.AddScoped<ICashierShiftService, CashierShiftService>();
+        services.AddScoped<ICashierOrderService, CashierOrderService>();
         services.AddScoped<IPermissionService, PermissionService>();
+        services.AddScoped<INotificationService, NotificationService>();
+
+
+
+
         services.AddMapster();
         services.AddValidators();
         return services;

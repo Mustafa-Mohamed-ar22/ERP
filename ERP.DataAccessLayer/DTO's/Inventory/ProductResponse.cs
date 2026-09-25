@@ -9,8 +9,7 @@ public record WarehouseResponse(Guid Id, string Name, string Code, Guid? BranchI
 public record CreateWarehouseRequest(string Name, string Code, Guid? BranchId);
 public record UpdateWarehouseRequest(string Name, string Code, Guid? BranchId, bool IsActive);
 
-public record StockLevelResponse(Guid ProductId, string ProductSku, string ProductName, Guid WarehouseId, string WarehouseName, decimal QuantityOnHand);
-
+public record StockLevelResponse(Guid ProductId, string ProductSku, string ProductName, decimal SalePrice, Guid WarehouseId, string WarehouseName, decimal QuantityOnHand);
 public record RecordStockMovementRequest(Guid ProductId, Guid WarehouseId, string MovementType, decimal Quantity, string? Reference);
 
 public record TransferStockRequest(Guid ProductId, Guid FromWarehouseId, Guid ToWarehouseId, decimal Quantity, string? Reference);

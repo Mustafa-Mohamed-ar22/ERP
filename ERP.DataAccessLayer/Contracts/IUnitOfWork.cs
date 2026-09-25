@@ -31,6 +31,13 @@ public interface IUnitOfWork
     IGenericRepository<Employee> Employees { get; }
     IGenericRepository<LeaveRequest> LeaveRequests { get; }
     IGenericRepository<AttendanceRecord> AttendanceRecords { get; }
+
+    IGenericRepository<CashierShift> CashierShifts { get; }
+    IGenericRepository<CashierShiftCashMovement> CashierShiftCashMovements { get; }
+    IGenericRepository<CashierOrder> CashierOrders { get; }
+    IGenericRepository<CashierInvoice> CashierInvoices { get; }
+    IGenericRepository<AccountingSettings> AccountingSettings { get; }
+    IGenericRepository<Notification> Notifications { get; }
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct = default);

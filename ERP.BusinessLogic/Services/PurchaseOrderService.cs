@@ -7,14 +7,15 @@ public class PurchaseOrderService : IPurchaseOrderService
     private readonly ICurrentUserService _currentUser;
     private readonly INumberSequenceService _numberSequenceService;
     private readonly IAccountingIntegrationService _accountingIntegrationService;
-
-    public PurchaseOrderService(IUnitOfWork unitOfWork, IStockService stockService, ICurrentUserService currentUser, INumberSequenceService numberSequenceService, IAccountingIntegrationService accountingIntegrationService)
+    private readonly INotificationService _notificationService;
+    public PurchaseOrderService(IUnitOfWork unitOfWork, IStockService stockService, ICurrentUserService currentUser, INumberSequenceService numberSequenceService, IAccountingIntegrationService accountingIntegrationService, INotificationService notificationService)
     {
         _unitOfWork = unitOfWork;
         _stockService = stockService;
         _currentUser = currentUser;
         _numberSequenceService = numberSequenceService;
         _accountingIntegrationService = accountingIntegrationService;
+        _notificationService = notificationService;
     }
     public async Task<Result<List<PurchaseOrderResponse>>> GetAllAsync(CancellationToken ct = default)
     {
@@ -150,18 +151,24 @@ public class PurchaseOrderService : IPurchaseOrderService
         return await GetByIdAsync(order.Id, ct);
     }
 
+    // PurchaseOrderService.cs — inject INotificationService, update ApproveAsync
     public async Task<Result<PurchaseOrderResponse>> ApproveAsync(Guid id, CancellationToken ct = default)
     {
         var order = await _unitOfWork.PurchaseOrders.GetByIdAsync(id, ct);
-        if (order is null)
-            return Result.Failure<PurchaseOrderResponse>(PurchaseOrderErrors.NotFound);
-
-        if (order.Status != PurchaseOrderStatus.Submitted)
-            return Result.Failure<PurchaseOrderResponse>(PurchaseOrderErrors.InvalidStatusTransition);
+        if (order is null) return Result.Failure<PurchaseOrderResponse>(PurchaseOrderErrors.NotFound);
+        if (order.Status != PurchaseOrderStatus.Submitted) return Result.Failure<PurchaseOrderResponse>(PurchaseOrderErrors.InvalidStatusTransition);
 
         order.Status = PurchaseOrderStatus.Approved;
         _unitOfWork.PurchaseOrders.Update(order);
         await _unitOfWork.SaveChangesAsync(ct);
+
+        if (order.CreatedBy is { } creatorUserId)
+        {
+            await _notificationService.NotifyUserAsync(creatorUserId,
+                "تمت الموافقة على أمر الشراء",
+                $"تمت الموافقة على أمر الشراء {order.OrderNumber}.",
+                NotificationType.Success, null, ct);
+        }
 
         return await GetByIdAsync(order.Id, ct);
     }

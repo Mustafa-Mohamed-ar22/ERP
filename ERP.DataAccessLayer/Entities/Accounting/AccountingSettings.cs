@@ -11,4 +11,8 @@
     public Account? RevenueAccount { get; set; }
     public Guid? CostOfGoodsSoldAccountId { get; set; }
     public Account? CostOfGoodsSoldAccount { get; set; }
+
+
+    public Guid? CashAccountId { get; set; }
+    public Account? CashAccount { get; set; }
 }

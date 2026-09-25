@@ -65,5 +65,17 @@ public static class PermissionsCatalog
         ("hr.leaves.request", "HR", "Submit and cancel own leave requests"),
         ("hr.leaves.approve", "HR", "Approve or reject leave requests"),
         ("hr.attendance.view", "HR", "View attendance records"),
+
+
+        // Cashier
+        ("cashier.shifts.open"        , "Cashier", "Open and view own cashier shifts"),
+        ("cashier.shifts.close"       , "Cashier", "Close cashier shifts"),
+        ("cashier.shifts.view"        , "Cashier", "View any cashier shift"),
+        ("cashier.shifts.cashmovement", "Cashier", "Log cash-in/cash-out movements during a shift"),
+        ("cashier.orders.create"      , "Cashier", "Create cashier (point-of-sale) orders"),
+        ("cashier.orders.view"        , "Cashier", "View cashier orders"),
+        ("cashier.orders.void"        , "Cashier", "Void cashier orders"),
+        ("cashier.invoices.view"      , "Cashier", "View cashier invoices"),
+        ("cashier.invoices.viewall", "Cashier", "View any cashier's invoices, not just your own"),
     };
 }

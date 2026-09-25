@@ -1,6 +1,3 @@
-// Entities/System/Setting.cs
-// Entities/System/AuditLog.cs
-// Entities/System/Notification.cs
 // Entities/System/Notification.cs
 public class Notification : BaseEntity, ITenantEntity
 {
@@ -9,7 +6,7 @@ public class Notification : BaseEntity, ITenantEntity
     public string Title { get; set; } = default!;
     public string Body { get; set; } = default!;
     public NotificationType Type { get; set; }
-    public bool IsRead { get; set; } = false;
+    public bool IsRead { get; set; }
     public string? Link { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

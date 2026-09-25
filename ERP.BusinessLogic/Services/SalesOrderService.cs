@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 public class SalesOrderService : ISalesOrderService
 {
@@ -7,14 +7,15 @@ public class SalesOrderService : ISalesOrderService
     private readonly ICurrentUserService _currentUser;
     private readonly INumberSequenceService _numberSequenceService;
     private readonly IAccountingIntegrationService _accountingIntegrationService;
-
-    public SalesOrderService(IUnitOfWork unitOfWork, IStockService stockService, ICurrentUserService currentUser, INumberSequenceService numberSequenceService, IAccountingIntegrationService accountingIntegrationService)
+    private readonly INotificationService _notificationService;
+    public SalesOrderService(IUnitOfWork unitOfWork, IStockService stockService, ICurrentUserService currentUser, INumberSequenceService numberSequenceService, IAccountingIntegrationService accountingIntegrationService, INotificationService notificationService)
     {
         _unitOfWork = unitOfWork;
         _stockService = stockService;
         _currentUser = currentUser;
         _numberSequenceService = numberSequenceService;
         _accountingIntegrationService = accountingIntegrationService;
+        _notificationService = notificationService;
     }
 
     public async Task<Result<List<SalesOrderResponse>>> GetAllAsync(CancellationToken ct = default)
@@ -26,7 +27,7 @@ public class SalesOrderService : ISalesOrderService
             .OrderByDescending(o => o.OrderDate)
             .ToListAsync(ct);
 
-        // Live stock warnings aren't computed for list results � would mean N extra queries per order
+        // Live stock warnings aren't computed for list results — would mean N extra queries per order
         // across a potentially large list. Call GetByIdAsync for a specific order's live availability.
         return Result.Success(orders.Select(o => ToResponse(o, new List<string>())).ToList());
     }
@@ -41,7 +42,7 @@ public class SalesOrderService : ISalesOrderService
         return Result.Success(ToResponse(order, warnings));
     }
 
-    // CreateAsync, SubmitAsync, ApproveAsync, ShipGoodsAsync, CancelAsync are UNCHANGED �
+    // CreateAsync, SubmitAsync, ApproveAsync, ShipGoodsAsync, CancelAsync are UNCHANGED —
     // they already end with `return await GetByIdAsync(order.Id, ct);`, so they automatically
     // pick up live warnings through the change above. No extra code needed in any of them.
 
@@ -183,17 +184,20 @@ public class SalesOrderService : ISalesOrderService
     public async Task<Result<SalesOrderResponse>> ApproveAsync(Guid id, CancellationToken ct = default)
     {
         var order = await _unitOfWork.SalesOrders.GetByIdAsync(id, ct);
-        if (order is null)
-            return Result.Failure<SalesOrderResponse>(SalesOrderErrors.NotFound);
+        if (order is null) return Result.Failure<SalesOrderResponse>(SalesOrderErrors.NotFound);
+        if (order.Status != SalesOrderStatus.Submitted) return Result.Failure<SalesOrderResponse>(SalesOrderErrors.InvalidStatusTransition);
 
-        if (order.Status != SalesOrderStatus.Submitted)
-            return Result.Failure<SalesOrderResponse>(SalesOrderErrors.InvalidStatusTransition);
-
-        // Deliberately NOT checking stock availability here � approval can exceed current stock (backorder-style).
-        // ShipGoodsAsync is where availability actually gets enforced, via IStockService's own InsufficientStock check.
         order.Status = SalesOrderStatus.Approved;
         _unitOfWork.SalesOrders.Update(order);
         await _unitOfWork.SaveChangesAsync(ct);
+
+        if (order.CreatedBy is { } creatorUserId)
+        {
+            await _notificationService.NotifyUserAsync(creatorUserId,
+                "تمت الموافقة على أمر البيع",
+                $"تمت الموافقة على أمر البيع {order.OrderNumber}.",
+                NotificationType.Success, null, ct);
+        }
 
         return await GetByIdAsync(order.Id, ct);
     }
@@ -242,7 +246,7 @@ public class SalesOrderService : ISalesOrderService
     //        return Result.Failure<SalesOrderResponse>(postingResult.Error);
 
     //    var accountingNote = postingResult.Data == GLPostingOutcome.Skipped
-    //        ? "Accounting integration not configured � this shipment was not posted to the General Ledger."
+    //        ? "Accounting integration not configured — this shipment was not posted to the General Ledger."
     //        : null;
 
     //    order.Status = order.Lines.All(l => l.ShippedQuantity >= l.Quantity)
@@ -350,7 +354,7 @@ public class SalesOrderService : ISalesOrderService
             return Result.Failure<SalesOrderResponse>(opResult.Error);
 
         var accountingNote = opResult.Data == GLPostingOutcome.Skipped
-            ? "Accounting integration not configured � this shipment was not posted to the General Ledger."
+            ? "Accounting integration not configured — this shipment was not posted to the General Ledger."
             : null;
 
         var response = await GetByIdAsync(order.Id, ct);

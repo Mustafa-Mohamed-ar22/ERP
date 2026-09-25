@@ -63,7 +63,41 @@ public class AccountingIntegrationService : IAccountingIntegrationService
 
         return await CreateAndPostAsync($"Shipment - {orderNumber}", lines, ct);
     }
+    // AccountingIntegrationService.cs — add
+    public async Task<Result<GLPostingResult>> PostCashSaleAsync(
+        string orderNumber, List<(Guid ProductId, decimal Quantity, decimal SalePrice, decimal UnitCost)> lines, CancellationToken ct = default)
+    {
+        var settings = await _context.AccountingSettings.FirstOrDefaultAsync(s => s.CompanyId == _currentUser.CompanyId, ct);
+        if (settings?.CashAccountId is null || settings.RevenueAccountId is null
+            || settings.InventoryAccountId is null || settings.CostOfGoodsSoldAccountId is null)
+            return Result.Success(new GLPostingResult(GLPostingOutcome.Skipped, null));
 
+        var sale = lines.Sum(l => l.Quantity * l.SalePrice);
+        var cost = lines.Sum(l => l.Quantity * l.UnitCost);
+        if (sale <= 0) return Result.Success(new GLPostingResult(GLPostingOutcome.Skipped, null));
+
+        var glLines = new List<JournalEntryLineRequest>
+    {
+        new(settings.CashAccountId!.Value, sale, 0, $"Cash sale: {orderNumber}"),
+        new(settings.RevenueAccountId!.Value, 0, sale, $"Revenue: {orderNumber}")
+    };
+        if (cost > 0)
+        {
+            glLines.Add(new JournalEntryLineRequest(settings.CostOfGoodsSoldAccountId!.Value, cost, 0, $"COGS: {orderNumber}"));
+            glLines.Add(new JournalEntryLineRequest(settings.InventoryAccountId!.Value, 0, cost, $"Inventory relief: {orderNumber}"));
+        }
+
+        var createResult = await _journalEntryService.CreateAsync(
+            new CreateJournalEntryRequest(DateTime.UtcNow, $"Cashier sale - {orderNumber}", glLines), ct);
+        if (!createResult.IsSuccess)
+            return Result.Failure<GLPostingResult>(createResult.Error);
+
+        var postResult = await _journalEntryService.PostAsync(createResult.Data!.Id, ct);
+        if (!postResult.IsSuccess)
+            return Result.Failure<GLPostingResult>(postResult.Error);
+
+        return Result.Success(new GLPostingResult(GLPostingOutcome.Posted, createResult.Data!.Id));
+    }
     private async Task<Result<GLPostingOutcome>> CreateAndPostAsync(string description, List<JournalEntryLineRequest> lines, CancellationToken ct)
     {
         var createResult = await _journalEntryService.CreateAsync(new CreateJournalEntryRequest(DateTime.UtcNow, description, lines), ct);

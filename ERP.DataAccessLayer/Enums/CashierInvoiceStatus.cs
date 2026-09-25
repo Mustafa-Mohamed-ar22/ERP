@@ -1,0 +1,1 @@
+public enum CashierInvoiceStatus { Issued, Voided }

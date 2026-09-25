@@ -55,6 +55,16 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
+    
+    
+    public DbSet<CashierShift> CashierShifts => Set<CashierShift>();
+    public DbSet<CashierShiftCashMovement> CashierShiftCashMovements => Set<CashierShiftCashMovement>();
+    public DbSet<CashierOrder> CashierOrders => Set<CashierOrder>();
+    public DbSet<CashierOrderLine> CashierOrderLines => Set<CashierOrderLine>();
+    public DbSet<CashierPayment> CashierPayments => Set<CashierPayment>();
+    public DbSet<CashierInvoice> CashierInvoices => Set<CashierInvoice>();
+    public DbSet<CashierInvoiceLine> CashierInvoiceLines => Set<CashierInvoiceLine>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

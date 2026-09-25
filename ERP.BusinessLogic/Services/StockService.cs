@@ -22,7 +22,7 @@ public class StockService : IStockService
             .ToListAsync(ct);
 
         return Result.Success(stockItems.Select(s => new StockLevelResponse(
-            product.Id, product.Sku, product.Name, s.WarehouseId, s.Warehouse.Name, s.QuantityOnHand)).ToList());
+            product.Id, product.Sku, product.Name, product.SalePrice, s.WarehouseId, s.Warehouse.Name, s.QuantityOnHand)).ToList());
     }
 
     public async Task<Result<List<StockLevelResponse>>> GetWarehouseStockAsync(Guid warehouseId, CancellationToken ct = default)
@@ -37,7 +37,7 @@ public class StockService : IStockService
             .ToListAsync(ct);
 
         return Result.Success(stockItems.Select(s => new StockLevelResponse(
-            s.ProductId, s.Product.Sku, s.Product.Name, warehouse.Id, warehouse.Name, s.QuantityOnHand)).ToList());
+            s.ProductId, s.Product.Sku, s.Product.Name, s.Product.SalePrice, warehouse.Id, warehouse.Name, s.QuantityOnHand)).ToList());
     }
 
     public async Task<Result<StockMovementResponse>> RecordMovementAsync(RecordStockMovementRequest request, CancellationToken ct = default)
